@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <!-- SEO: Meta Title -->
+    <title>1-Bit Camera</title>
+    
+    <!-- SEO: Core Meta Tags -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Experience a retro 1-bit aesthetic with our real-time camera. Apply classic dithering effects like Halftone, Bayer, and Floyd-Steinberg to your webcam feed instantly. No installation required.">
+    <meta name="keywords" content="1-bit camera, dither, dithering, retro camera, webcam effects, halftone, bayer matrix, floyd-steinberg, atkinson, pixel art, 8-bit, retro aesthetic, online camera tool">
+    <meta name="author" content="Chris Pirillo">
+    
+    <!-- SEO: Canonical URL to prevent duplicate content issues -->
+    <link rel="canonical" href="https://pirillo.com/arcade/1-bit-camera.html">
+
+    <!-- SEO: Open Graph (for Facebook, Pinterest, etc.) & Twitter Card Metadata -->
+    <meta property="og:title" content="1-Bit Camera">
+    <meta property="og:description" content="A real-time camera app that applies classic 1-bit dithering effects to your webcam feed.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pirillo.com/arcade/1-bit-camera.html">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/1-bit-camera.png">
+
+    <!-- SEO: Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="1-Bit Camera">
+    <meta name="twitter:description" content="Experience a retro 1-bit aesthetic with our real-time camera. Apply classic dithering effects like Halftone, Bayer, and Floyd-Steinberg to your webcam feed instantly.">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/1-bit-camera.png">
+    <meta name="twitter:creator" content="@chrispirillo"> 
+    <meta name="twitter:site" content="@chrispirillo">
+        
+    <!-- Performance: Resource hints to establish early connections to critical third-party origins. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- The Google Fonts stylesheet is fetched here. -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --background-color: #000000;
+            --foreground-color: #ffffff;
+            --border-color: #ffffff;
+            --spacing: 15px;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: var(--background-color);
+        }
+        body {
+            color: var(--foreground-color);
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--spacing);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing);
+            width: 100%;
+            max-width: 640px;
+        }
+        h1 {
+            font-size: 20px;
+            text-align: center;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        #canvas-wrapper {
+            width: 100%;
+            background-color: #111;
+            /* MOBILE FIX: Default to portrait aspect ratio to prevent jump */
+            aspect-ratio: 3 / 4; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #loading-message {
+            font-size: 12px;
+            text-align: center;
+            position: absolute;
+            padding: 0 10px;
+        }
+        #mainCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+        }
+        #videoFeed {
+            display: none;
+        }
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing);
+            width: 100%;
+        }
+        .sliders-container {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 15px 10px;
+            align-items: center;
+            width: 100%;
+        }
+        .sliders-container label {
+            grid-column: 1 / 2;
+            font-size: 10px;
+            text-transform: uppercase;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .sliders-container input[type="range"] {
+             grid-column: 2 / 3;
+             width: 100%;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px; 
+            justify-content: center;
+        }
+        button {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            padding: 10px 8px;
+            background-color: var(--background-color);
+            color: var(--foreground-color);
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        button:hover, button.active {
+            background-color: var(--foreground-color);
+            color: var(--background-color);
+        }
+        button:active { transform: translateY(2px); }
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            height: 4px; background: var(--border-color);
+            outline: none; border: 2px solid var(--background-color);
+            border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            background: var(--foreground-color);
+            border: 2px solid var(--border-color);
+            cursor: pointer; border-radius: 0;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px; height: 18px;
+            background: var(--foreground-color);
+            border: 2px solid var(--border-color);
+            cursor: pointer; border-radius: 0;
+        }
+        #error-message {
+            color: red;
+            text-align: center;
+            font-size: 10px;
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    
+    <main>
+        <header>
+            <h1>1-Bit Camera</h1>
+        </header>
+        
+        <div id="canvas-wrapper">
+             <div id="loading-message">Loading Camera...</div>
+             <canvas id="mainCanvas"></canvas>
+        </div>
+        
+        <video id="videoFeed" playsinline ></video>
+        <div id="error-message"></div>
+
+        <section class="controls-container" aria-label="Camera Effect Controls">
+            <nav class="button-group" id="dither-buttons">
+                <button id="btn-threshold" class="active">Threshold</button>
+                <button id="btn-bayer">Bayer</button>
+                <button id="btn-halftone">Halftone</button>
+                <button id="btn-floyd">Floyd-Steinberg</button>
+                <button id="btn-stucki">Stucki</button>
+                <button id="btn-atkinson">Atkinson</button>
+                <button id="btn-random">Random</button>
+            </nav>
+            
+            <div class="sliders-container">
+                <label for="pixelSize">Dot Size</label>
+                <input type="range" id="pixelSize" min="1" max="32" value="3" step="1">
+                
+                <label for="brightness">Brightness</label>
+                <input type="range" id="brightness" min="-100" max="100" value="0" step="1">
+                
+                <label for="contrast">Contrast</label>
+                <input type="range" id="contrast" min="0" max="4" value="1" step="0.1">
+                
+                <label for="intensity" id="intensityLabel">Cutoff</label>
+                <input type="range" id="intensity" min="0" max="255" value="128" step="1">
+            </div>
+
+            <div class="button-group" aria-label="Actions">
+                 <button id="snapshotButton">Snapshot</button>
+                 <button id="invertButton">Invert</button>
+                 <!-- "Choose" button has been removed -->
+            </div>
+            
+        </section>
+    </main>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Element References ---
+        const video = document.getElementById('videoFeed');
+        const canvas = document.getElementById('mainCanvas');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const loadingMessage = document.getElementById('loading-message');
+        const errorMessage = document.getElementById('error-message');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const offscreenCanvas = document.createElement('canvas');
+        const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+        
+        const pixelSizeSlider = document.getElementById('pixelSize');
+        const brightnessSlider = document.getElementById('brightness');
+        const contrastSlider = document.getElementById('contrast');
+        const intensitySlider = document.getElementById('intensity');
+        const intensityLabel = document.getElementById('intensityLabel');
+        const snapshotButton = document.getElementById('snapshotButton');
+        const invertButton = document.getElementById('invertButton');
+        const ditherButtons = document.querySelectorAll('#dither-buttons button');
+
+        // --- State Variables ---
+        let pixelSize = 3, brightness = 0, contrast = 1, intensity = 128;
+        let isInverted = false, ditheringType = 'threshold', currentStream;
+
+        // --- Dithering Data ---
+        const bayerMatrix = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]].map(row => row.map(val => val / 16 - 0.5));
+        const floydSteinbergKernel = [{ dx: 1, dy: 0, weight: 7 / 16 }, { dx: -1, dy: 1, weight: 3 / 16 }, { dx: 0, dy: 1, weight: 5 / 16 }, { dx: 1, dy: 1, weight: 1 / 16 }];
+        const atkinsonKernel = [{ dx: 1, dy: 0, weight: 1 / 8 }, { dx: 2, dy: 0, weight: 1 / 8 }, { dx: -1, dy: 1, weight: 1 / 8 }, { dx: 0, dy: 1, weight: 1 / 8 }, { dx: 1, dy: 1, weight: 1 / 8 }, { dx: 0, dy: 2, weight: 1 / 8 }];
+        const stuckiKernel = [{ dx: 1, dy: 0, weight: 8 / 42 }, { dx: 2, dy: 0, weight: 4 / 42 }, { dx: -2, dy: 1, weight: 2 / 42 }, { dx: -1, dy: 1, weight: 4 / 42 }, { dx: 0, dy: 1, weight: 8 / 42 }, { dx: 1, dy: 1, weight: 4 / 42 }, { dx: 2, dy: 1, weight: 2 / 42 }, { dx: -2, dy: 2, weight: 1 / 42 }, { dx: -1, dy: 2, weight: 2 / 42 }, { dx: 0, dy: 2, weight: 4 / 42 }, { dx: 1, dy: 2, weight: 2 / 42 }, { dx: 2, dy: 2, weight: 1 / 42 }];
+
+        // --- Core Functions ---
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            loadingMessage.style.display = 'none';
+        }
+
+        async function startCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            const constraints = { video: { width: { ideal: 640 }, height: { ideal: 480 } } };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                currentStream = stream;
+                await video.play();
+                errorMessage.style.display = 'none';
+            } catch (err) {
+                console.error("Error starting camera:", err);
+                displayError(`Camera Error: ${err.name}. Please grant permission and try again.`);
+            }
+        }
+        
+        function draw() {
+            if (video.paused || video.ended || !video.videoWidth) {
+                requestAnimationFrame(draw);
+                return;
+            }
+            canvas.width = 640;
+            canvas.height = canvas.width / (video.videoWidth / video.videoHeight);
+            const offscreenW = Math.floor(canvas.width / pixelSize);
+            const offscreenH = Math.floor(canvas.height / pixelSize);
+            if (offscreenW <= 0 || offscreenH <= 0) {
+                 requestAnimationFrame(draw);
+                 return;
+            }
+            offscreenCanvas.width = offscreenW;
+            offscreenCanvas.height = offscreenH;
+            offscreenCtx.drawImage(video, 0, 0, offscreenW, offscreenH);
+            const imageData = offscreenCtx.getImageData(0, 0, offscreenW, offscreenH);
+            const data = imageData.data, grayscale = new Array(offscreenW * offscreenH);
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114 + brightness;
+                grayscale[i / 4] = (gray - 128) * contrast + 128;
+            }
+            const black = isInverted ? '#FFF' : '#000', white = isInverted ? '#000' : '#FFF';
+            ctx.fillStyle = black; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ditheringType === 'halftone' ? renderHalftone(grayscale, offscreenW, offscreenH, white) : renderDither(grayscale, offscreenW, offscreenH, white);
+            requestAnimationFrame(draw);
+        }
+
+        function renderDither(grayscale, w, h, color) {
+            const outputData = new Uint8ClampedArray(w * h);
+            const kernels = { floyd: floydSteinbergKernel, stucki: stuckiKernel, atkinson: atkinsonKernel };
+            if (kernels[ditheringType]) {
+                applyErrorDiffusion(grayscale, w, h, outputData, kernels[ditheringType]);
+            } else {
+                for (let i = 0; i < grayscale.length; i++) {
+                    const x = i % w, y = Math.floor(i / w);
+                    let thresholdValue;
+                    if (ditheringType === 'threshold') thresholdValue = intensity;
+                    else if (ditheringType === 'bayer') thresholdValue = 128 + bayerMatrix[y % 4][x % 4] * 255 * intensity;
+                    else thresholdValue = 128 + (Math.random() - 0.5) * 255 * intensity;
+                    outputData[i] = grayscale[i] > thresholdValue ? 255 : 0;
+                }
+            }
+            ctx.fillStyle = color;
+            for (let i = 0; i < outputData.length; i++) {
+                if (outputData[i] === 255) ctx.fillRect((i % w) * pixelSize, Math.floor(i / w) * pixelSize, pixelSize, pixelSize);
+            }
+        }
+        
+        function renderHalftone(grayData, w, h, color) {
+            ctx.fillStyle = color;
+            for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                const gray = Math.max(0, Math.min(255, grayData[y * w + x]));
+                const radius = (gray / 255) * (pixelSize / 2) * intensity;
+                if (radius > 0.2) {
+                    ctx.beginPath();
+                    ctx.arc(x * pixelSize + pixelSize / 2, y * pixelSize + pixelSize / 2, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        function applyErrorDiffusion(grayData, w, h, outputData, kernel) {
+            const mutableGray = [...grayData], effectiveIntensity = Math.min(intensity, 1.05);
+            for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+                const i = y * w + x, oldPixel = mutableGray[i], newPixel = oldPixel > 128 ? 255 : 0;
+                outputData[i] = newPixel;
+                const quantError = (oldPixel - newPixel) * effectiveIntensity;
+                for (const k of kernel) {
+                    const nX = x + k.dx, nY = y + k.dy;
+                    if (nX >= 0 && nX < w && nY >= 0 && nY < h) mutableGray[nY * w + nX] += quantError * k.weight;
+                }
+            }
+        }
+
+        function setupEventListeners() {
+            video.addEventListener('loadedmetadata', () => {
+                canvasWrapper.style.aspectRatio = video.videoWidth / video.videoHeight;
+                loadingMessage.style.display = 'none';
+                canvasWrapper.style.opacity = 1; // Fade in the canvas
+            });
+            
+            pixelSizeSlider.addEventListener('input', e => pixelSize = parseInt(e.target.value, 10));
+            brightnessSlider.addEventListener('input', e => brightness = parseInt(e.target.value, 10));
+            contrastSlider.addEventListener('input', e => contrast = parseFloat(e.target.value));
+            intensitySlider.addEventListener('input', e => intensity = parseFloat(e.target.value));
+            
+            invertButton.addEventListener('click', () => {
+                isInverted = !isInverted; invertButton.classList.toggle('active', isInverted);
+            });
+            
+            ditherButtons.forEach(button => button.addEventListener('click', () => {
+                ditherButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                ditheringType = button.id.split('-')[1];
+                const isThreshold = ditheringType === 'threshold';
+                intensityLabel.textContent = isThreshold ? 'Cutoff' : 'Effect';
+                intensitySlider.min = 0;
+                intensitySlider.max = isThreshold ? 255 : 1.5;
+                intensitySlider.step = isThreshold ? 1 : 0.05;
+                intensitySlider.value = isThreshold ? 128 : 1.0;
+                if (['floyd', 'stucki', 'atkinson'].includes(ditheringType)) intensitySlider.max = 1.05;
+                intensity = parseFloat(intensitySlider.value);
+                if (ditheringType === 'halftone' && pixelSize < 2) {
+                    pixelSize = 2; pixelSizeSlider.value = 2;
+                }
+            }));
+
+            snapshotButton.addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = `1bit-cam-${ditheringType}-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png'); link.click();
+            });
+        }
+        
+        async function initializeApp() {
+            setupEventListeners();
+            await startCamera();
+            document.getElementById('btn-threshold').click();
+            draw(); // Start the main render loop
+        }
+
+        initializeApp();
+    });
+    </script>
+</body>
+</html>
