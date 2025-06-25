@@ -7,7 +7,6 @@ Experience a retro 1-bit aesthetic with our real-time camera. Apply classic dith
 
 ![Screenshot](https://github.com/ChrisPirillo/1-bit-camera/blob/main/assets/screenshot.png?raw=true)
 
-
 ![Screenshot](https://raw.githubusercontent.com/ChrisPirillo/1-bit-camera/main/assets/screenshot.png)
 
 * Try it now: [https://pirillo.com/arcade/1-bit-camera.html](https://pirillo.com/arcade/1-bit-camera.html)
